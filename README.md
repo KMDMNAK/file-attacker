@@ -1,5 +1,5 @@
 # file-attacker
-dictionary attack for local file
+Brute force attack for local file
 
 
 ## ref
