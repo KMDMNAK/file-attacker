@@ -6,9 +6,10 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"time"
 )
 
-func LockOnFile(filePath string, passwordLength uint16, routineLimit int64, pwCharactors string, initialPassword string) (string, error) {
+func LockOnFile(filePath string, passwordLength uint16, routineLimit int64, pwCharactors string, initialPassword string, sleepCount uint64) (string, error) {
 	var initialPasswordByte []byte
 	if initialPassword == "" {
 		initialPasswordByte = nil
@@ -26,8 +27,16 @@ func LockOnFile(filePath string, passwordLength uint16, routineLimit int64, pwCh
 	var gerr error
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
+	count := 0
 L:
 	for {
+		if sleepCount != 0 {
+			count++
+			if sleepCount == uint64(count) {
+				count = 0
+				time.Sleep(time.Second * 1)
+			}
+		}
 		routineChan <- struct{}{}
 		select {
 		case pw := <-pwChan:
