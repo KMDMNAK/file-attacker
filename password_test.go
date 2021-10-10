@@ -82,6 +82,11 @@ func TestLockOnFile(t *testing.T) {
 			wantErr: false,
 			want:    "abcde",
 			name:    "(success) password erc8 no limit",
+		}, {
+			args:    args{"testdata/password-pwin1.zip", 5, LOWERALPHABETSANDNUMBERS},
+			wantErr: false,
+			want:    "pwin1",
+			name:    "(success) password pwin1 no limit",
 		},
 	}
 	for _, tt := range tests {
