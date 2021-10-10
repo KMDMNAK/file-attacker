@@ -5,7 +5,7 @@ import (
 )
 
 func TestAttacker_NextPassword_Length0(t *testing.T) {
-	a := NewAttacker(0, LOWERALPHABETS)
+	a := NewAttacker(0, LOWERALPHABETS, nil)
 	pb, err := a.NextPassword()
 	p := string(pb)
 	if err != nil {
@@ -22,7 +22,7 @@ func TestAttacker_NextPassword_Length0(t *testing.T) {
 	if p != "b" {
 		t.Errorf("%s should be %s", p, "b")
 	}
-	a = NewAttacker(0, LOWERALPHABETS)
+	a = NewAttacker(0, LOWERALPHABETS, nil)
 	for i := 0; i < 27; i++ {
 		pb, err = a.NextPassword()
 		p = string(pb)
@@ -36,7 +36,7 @@ func TestAttacker_NextPassword_Length0(t *testing.T) {
 }
 
 func TestAttacker_NextPassword_Length(t *testing.T) {
-	a := NewAttacker(3, LOWERALPHABETS)
+	a := NewAttacker(3, LOWERALPHABETS, nil)
 	p, err := a.NextPassword()
 	if err != nil {
 		t.Error(err.Error())
