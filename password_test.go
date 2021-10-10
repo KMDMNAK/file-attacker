@@ -85,7 +85,7 @@ func TestLockOnFile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		pw, err := LockOnFile(tt.args.fp, uint16(tt.args.length), tt.args.pwCharactors)
+		pw, err := LockOnFile(tt.args.fp, uint16(tt.args.length), 3, tt.args.pwCharactors)
 		if err != nil {
 			if !tt.wantErr {
 				t.Errorf("name :%s\n%s", tt.name, err.Error())

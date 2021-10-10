@@ -2,22 +2,19 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"os/signal"
 	"sync"
 )
 
-var (
-	CHECKLIMIT               = 5
-	LOWERALPHABETS           = "abcdefghijklmnopqrstuvwxyz"
-	LOWERALPHABETSANDNUMBERS = "abcdefghijklmnopqrstuvwxyz1234567890"
-)
-
-func LockOnFile(filePath string, passwordLength uint16, pwCharactors string) (string, error) {
+func LockOnFile(filePath string, passwordLength uint16, routineLimit int64, pwCharactors string) (string, error) {
 	attacker := NewAttacker(passwordLength, pwCharactors)
 	pv, err := CreateZipFile(filePath)
 	if err != nil {
 		return "", err
 	}
-	routineChan := make(chan struct{}, CHECKLIMIT)
+	routineChan := make(chan struct{}, routineLimit)
 	pwChan := make(chan string, 1)
 	var wg sync.WaitGroup
 	var gerr error
@@ -56,8 +53,8 @@ L:
 		return pw, nil
 	default:
 		if gerr != nil {
-		return "", gerr
-	}
+			return "", gerr
+		}
 		// case for interrupt
 		fmt.Println("Get interrupt")
 		b, err := attacker.NextPassword()

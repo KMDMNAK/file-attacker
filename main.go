@@ -9,11 +9,21 @@ import (
 
 type charactorMode uint8
 
+var (
+	LOWERALPHABETS                   = "abcdefghijklmnopqrstuvwxyz"
+	LOWERALPHABETSANDNUMBERS         = "abcdefghijklmnopqrstuvwxyz1234567890"
+	LOWERALPHABETSANDNUMBERSANDCOLON = "abcdefghijklmnopqrstuvwxyz1234567890."
+)
+
 func (cm charactorMode) CharactorStrings() string {
 	switch cm {
 	case 0:
 		{
 			return LOWERALPHABETSANDNUMBERS
+		}
+	case 1:
+		{
+			return LOWERALPHABETSANDNUMBERSANDCOLON
 		}
 	default:
 		{
@@ -27,6 +37,7 @@ func setAttackCommand(rootCmd *cobra.Command) {
 	var plen uint16
 	var fp string
 	var mode uint16
+	var routineLimit int64
 	c := &cobra.Command{
 		Use: "attack",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -34,7 +45,7 @@ func setAttackCommand(rootCmd *cobra.Command) {
 				fmt.Println("set file path")
 				return
 			}
-			ps, err := LockOnFile(fp, uint16(plen), charactorMode(mode).CharactorStrings())
+			ps, err := LockOnFile(fp, uint16(plen), routineLimit, charactorMode(mode).CharactorStrings())
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -47,6 +58,7 @@ func setAttackCommand(rootCmd *cobra.Command) {
 	c.PersistentFlags().StringVarP(&fp, "filepath", "f", "", "filepath")
 	c.PersistentFlags().Uint16VarP(&plen, "pwl", "l", 0, "password length")
 	c.PersistentFlags().Uint16VarP(&mode, "mode", "m", 0, "target charactor mode")
+	c.PersistentFlags().Int64VarP(&routineLimit, "routine", "r", 3, "go routine limit number")
 	rootCmd.AddCommand(c)
 }
 
