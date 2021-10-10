@@ -1,1 +1,3 @@
-a
+Hello World!
+This is dummy.txt
+You can use this file for checking password validation.
