@@ -89,13 +89,13 @@ type Attacker struct {
 	isFirst                 bool
 }
 
-func (a *Attacker) addLength() {
+func (a *Attacker) extendLength() {
 	a.currentPassword = append(a.currentPassword, a.TargetCharactors[0])
 	a.currentPasswordTable = make([]uint16, len(a.currentPasswordTable)+1)
 }
 
 func (a *Attacker) NextPassword() ([]byte, error) {
-	addLengthFlag := false
+	extendLengthFlag := false
 	for i := 0; i < len(a.currentPasswordTable); i++ {
 		if a.isFirst {
 			a.isFirst = false
@@ -109,15 +109,15 @@ func (a *Attacker) NextPassword() ([]byte, error) {
 			a.currentPasswordTable[i] = 0
 			a.currentPassword[i] = a.TargetCharactors[a.currentPasswordTable[0]]
 			if i == len(a.currentPasswordTable)-1 {
-				addLengthFlag = true
+				extendLengthFlag = true
 			}
 		}
 	}
-	if addLengthFlag {
+	if extendLengthFlag {
 		if !a.isVarLength {
 			return nil, errors.New("no password was found")
 		}
-		a.addLength()
+		a.extendLength()
 	}
 	return a.currentPassword, nil
 }
