@@ -21,12 +21,17 @@ func LockOnFile(filePath string, passwordLength uint16, pwCharactors string) (st
 	pwChan := make(chan string, 1)
 	var wg sync.WaitGroup
 	var gerr error
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+L:
 	for {
 		routineChan <- struct{}{}
 		select {
 		case pw := <-pwChan:
 			wg.Wait()
 			return pw, nil
+		case <-interrupt:
+			break L
 		default:
 		}
 		p, err := attacker.NextPassword()
@@ -50,8 +55,19 @@ func LockOnFile(filePath string, passwordLength uint16, pwCharactors string) (st
 	case pw := <-pwChan:
 		return pw, nil
 	default:
+		if gerr != nil {
 		return "", gerr
 	}
+		// case for interrupt
+		fmt.Println("Get interrupt")
+		b, err := attacker.NextPassword()
+		if err != nil {
+			return "", err
+		}
+		fmt.Printf("next %d", b[:])
+		os.Exit(1)
+	}
+	return "", nil
 }
 
 func NewAttacker(length uint16, targetCharactors string) *Attacker {
