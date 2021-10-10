@@ -38,6 +38,7 @@ func setAttackCommand(rootCmd *cobra.Command) {
 	var fp string
 	var mode uint16
 	var routineLimit int64
+	var initialPassword string
 	c := &cobra.Command{
 		Use: "attack",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -45,7 +46,7 @@ func setAttackCommand(rootCmd *cobra.Command) {
 				fmt.Println("set file path")
 				return
 			}
-			ps, err := LockOnFile(fp, uint16(plen), routineLimit, charactorMode(mode).CharactorStrings())
+			ps, err := LockOnFile(fp, uint16(plen), routineLimit, charactorMode(mode).CharactorStrings(), initialPassword)
 			if err != nil {
 				fmt.Println(err.Error())
 			} else {
@@ -59,6 +60,7 @@ func setAttackCommand(rootCmd *cobra.Command) {
 	c.PersistentFlags().Uint16VarP(&plen, "pwl", "l", 0, "password length")
 	c.PersistentFlags().Uint16VarP(&mode, "mode", "m", 0, "target charactor mode")
 	c.PersistentFlags().Int64VarP(&routineLimit, "routine", "r", 3, "go routine limit number")
+	c.PersistentFlags().StringVarP(&initialPassword, "initial", "i", "", "initial password string")
 	rootCmd.AddCommand(c)
 }
 

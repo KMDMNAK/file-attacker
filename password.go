@@ -8,8 +8,14 @@ import (
 	"sync"
 )
 
-func LockOnFile(filePath string, passwordLength uint16, routineLimit int64, pwCharactors string) (string, error) {
-	attacker := NewAttacker(passwordLength, pwCharactors, nil)
+func LockOnFile(filePath string, passwordLength uint16, routineLimit int64, pwCharactors string, initialPassword string) (string, error) {
+	var initialPasswordByte []byte
+	if initialPassword == "" {
+		initialPasswordByte = nil
+	} else {
+		initialPasswordByte = []byte(initialPassword)
+	}
+	attacker := NewAttacker(passwordLength, pwCharactors, initialPasswordByte)
 	pv, err := CreateZipFile(filePath)
 	if err != nil {
 		return "", err
@@ -125,16 +131,24 @@ func (a *Attacker) NextPassword() ([]byte, error) {
 }
 
 // if no missmatch for given byte on table, return 0
-func (a Attacker) getTableIndex(b byte) int {
+func (a Attacker) getTableIndex(b byte) uint16 {
 	for i, c := range a.TargetCharactors {
 		if c == b {
-			return i
+			return uint16(i)
 		}
 	}
 	return 0
 }
 
 func (a *Attacker) preparePassword(initialPassword []byte) {
+	if initialPassword != nil && (a.isVarLength || len(initialPassword) == int(a.PasswordLength)) {
+		a.currentPassword = initialPassword
+		a.currentPasswordTable = make([]uint16, len(a.currentPassword))
+		for ti, p := range a.currentPassword {
+			a.currentPasswordTable[ti] = a.getTableIndex(p)
+		}
+		return
+	}
 	if a.isVarLength {
 		a.currentPasswordTable = []uint16{0}
 	} else {
