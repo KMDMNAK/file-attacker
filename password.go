@@ -1,47 +1,65 @@
 package main
 
 import (
-	// "archive/zip"
 	"errors"
-
-	// "github.com/alexmullins/zip"
-	// "github.com/yeka/zip"
-	"github.com/mzky/zip"
+	"sync"
 )
 
 var (
+	CHECKLIMIT               = 5
 	LOWERALPHABETS           = "abcdefghijklmnopqrstuvwxyz"
 	LOWERALPHABETSANDNUMBERS = "abcdefghijklmnopqrstuvwxyz1234567890"
 )
 
-func LockOnFile(filePath string, passwordLength uint8, pwCharactors string) (string, error) {
-	tf, err := NewTargetFile(filePath)
+func LockOnFile(filePath string, passwordLength uint16, pwCharactors string) (string, error) {
+	attacker := NewAttacker(passwordLength, pwCharactors)
+	pv, err := CreateZipFile(filePath)
 	if err != nil {
 		return "", err
 	}
-	if !tf.isEncrypted() {
-		return "", errors.New("this file is not encrypted")
-	}
-	attacker := NewAttacker(passwordLength, pwCharactors)
+	routineChan := make(chan struct{}, CHECKLIMIT)
+	pwChan := make(chan string, 1)
+	var wg sync.WaitGroup
+	var gerr error
 	for {
+		routineChan <- struct{}{}
+		select {
+		case pw := <-pwChan:
+			wg.Wait()
+			return pw, nil
+		default:
+		}
 		p, err := attacker.NextPassword()
 		if err != nil {
-			return "", err
+			gerr = err
+			break
 		}
-		tf.oneFile.SetPassword(p)
-		_, err = tf.oneFile.Open()
-		if err == nil {
-			return p, nil
-		}
+		cp := make([]byte, len(p))
+		copy(cp, p)
+		wg.Add(1)
+		go func(pp []byte) {
+			defer wg.Done()
+			if pv.Validate(pp) {
+				pwChan <- string(pp)
+			}
+			<-routineChan
+		}(cp)
+	}
+	wg.Wait()
+	select {
+	case pw := <-pwChan:
+		return pw, nil
+	default:
+		return "", gerr
 	}
 }
 
-func NewAttacker(length uint8, targetCharactors string) *Attacker {
+func NewAttacker(length uint16, targetCharactors string) *Attacker {
 	a := Attacker{
 		TargetCharactors:        []byte(targetCharactors),
 		length:                  length,
 		isVarLength:             false,
-		targetCharactorMaxIndex: uint8(len(targetCharactors)) - 1,
+		targetCharactorMaxIndex: uint16(len(targetCharactors)) - 1,
 		isFirst:                 true,
 	}
 	a.preparePassword()
@@ -50,20 +68,20 @@ func NewAttacker(length uint8, targetCharactors string) *Attacker {
 
 type Attacker struct {
 	TargetCharactors        []byte
-	targetCharactorMaxIndex uint8
+	targetCharactorMaxIndex uint16
 	currentPassword         []byte
-	currentPasswordTable    []uint8
+	currentPasswordTable    []uint16
 	isVarLength             bool
-	length                  uint8
+	length                  uint16
 	isFirst                 bool
 }
 
 func (a *Attacker) addLength() {
 	a.currentPassword = append(a.currentPassword, a.TargetCharactors[0])
-	a.currentPasswordTable = make([]uint8, len(a.currentPasswordTable)+1, len(a.currentPasswordTable)+1)
+	a.currentPasswordTable = make([]uint16, len(a.currentPasswordTable)+1)
 }
 
-func (a *Attacker) NextPassword() (string, error) {
+func (a *Attacker) NextPassword() ([]byte, error) {
 	addLengthFlag := false
 	for i := 0; i < len(a.currentPasswordTable); i++ {
 		if a.isFirst {
@@ -84,52 +102,23 @@ func (a *Attacker) NextPassword() (string, error) {
 	}
 	if addLengthFlag {
 		if !a.isVarLength {
-			return "", errors.New("no password was found")
+			return nil, errors.New("no password was found")
 		}
 		a.addLength()
 	}
-	return string(a.currentPassword), nil
+	return a.currentPassword, nil
 }
 
 func (a *Attacker) preparePassword() {
 	if a.length == 0 {
 		a.isVarLength = true
 		a.currentPassword = []byte{a.TargetCharactors[0]}
-		a.currentPasswordTable = []uint8{0}
+		a.currentPasswordTable = []uint16{0}
 	} else {
-		a.currentPassword = make([]byte, a.length, a.length)
+		a.currentPassword = make([]byte, a.length)
 		for i := 0; i < int(a.length); i++ {
 			a.currentPassword[i] = a.TargetCharactors[0]
 		}
-		a.currentPasswordTable = make([]uint8, a.length, a.length)
+		a.currentPasswordTable = make([]uint16, a.length)
 	}
-}
-
-func NewTargetFile(filePath string) (*targetFile, error) {
-	fp, err := getFilePath(filePath)
-	if err != nil {
-		return nil, err
-	}
-	zr, err := zip.OpenReader(fp)
-	if err != nil {
-		return nil, err
-	}
-	tf := targetFile{zr: zr}
-	tf.oneFile = tf.zr.File[0]
-	return &tf, err
-}
-
-type targetFile struct {
-	zr      *zip.ReadCloser
-	oneFile *zip.File
-}
-
-func (tf *targetFile) isEncrypted() bool {
-	if tf.zr == nil {
-		return false
-	}
-	if len(tf.zr.File) == 0 {
-		return false
-	}
-	return tf.oneFile.IsEncrypted()
 }
