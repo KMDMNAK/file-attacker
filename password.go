@@ -69,24 +69,26 @@ L:
 
 func NewAttacker(length uint16, targetCharactors string) *Attacker {
 	a := Attacker{
-		TargetCharactors:        []byte(targetCharactors),
-		length:                  length,
-		isVarLength:             false,
-		targetCharactorMaxIndex: uint16(len(targetCharactors)) - 1,
-		isFirst:                 true,
+		TargetCharactors: []byte(targetCharactors),
+		PasswordLength:   length,
+		isVarLength:      false,
+		isFirst:          true,
 	}
 	a.preparePassword()
 	return &a
 }
 
 type Attacker struct {
-	TargetCharactors        []byte
-	targetCharactorMaxIndex uint16
-	currentPassword         []byte
-	currentPasswordTable    []uint16
-	isVarLength             bool
-	length                  uint16
-	isFirst                 bool
+	TargetCharactors     []byte
+	PasswordLength       uint16
+	currentPassword      []byte
+	currentPasswordTable []uint16
+	isVarLength          bool
+	isFirst              bool
+}
+
+func (a Attacker) targetCharactorMaxIndex() uint16 {
+	return uint16(len(a.TargetCharactors)) - 1
 }
 
 func (a *Attacker) extendLength() {
@@ -101,7 +103,7 @@ func (a *Attacker) NextPassword() ([]byte, error) {
 			a.isFirst = false
 			break
 		}
-		if a.currentPasswordTable[i] < a.targetCharactorMaxIndex {
+		if a.currentPasswordTable[i] < a.targetCharactorMaxIndex() {
 			a.currentPasswordTable[i]++
 			a.currentPassword[i] = a.TargetCharactors[a.currentPasswordTable[i]]
 			break
@@ -123,15 +125,15 @@ func (a *Attacker) NextPassword() ([]byte, error) {
 }
 
 func (a *Attacker) preparePassword() {
-	if a.length == 0 {
+	if a.PasswordLength == 0 {
 		a.isVarLength = true
 		a.currentPassword = []byte{a.TargetCharactors[0]}
 		a.currentPasswordTable = []uint16{0}
 	} else {
-		a.currentPassword = make([]byte, a.length)
-		for i := 0; i < int(a.length); i++ {
+		a.currentPassword = make([]byte, a.PasswordLength)
+		for i := 0; i < int(a.PasswordLength); i++ {
 			a.currentPassword[i] = a.TargetCharactors[0]
 		}
-		a.currentPasswordTable = make([]uint16, a.length)
+		a.currentPasswordTable = make([]uint16, a.PasswordLength)
 	}
 }
