@@ -18,7 +18,7 @@ file name length                2 bytes
 extra field length              2 bytes
 */
 
-func sTestGetFileInfo(t *testing.T) {
+func TestGetFileInfo(t *testing.T) {
 	type args struct {
 		fp string
 	}
@@ -28,27 +28,33 @@ func sTestGetFileInfo(t *testing.T) {
 		want file
 	}{
 		{
+			name: "password-ab8.zip",
 			args: args{fp: "testdata/password-ab8.zip"},
 			want: file{
 				crc32: 3453873229,
 			},
 		}, {
+			name: "password-abc.zip",
 			args: args{fp: "testdata/password-abc.zip"},
+			want: file{
+				crc32: 1544550971,
+			},
+		}, {
+			name: "password-pwin1.zip",
+			args: args{fp: "testdata/password-pwin1.zip"},
 			want: file{
 				crc32: 1544550971,
 			},
 		},
 	}
 	for _, tt := range tests {
+		t.Logf("Test Name :%s", tt.name)
 		files, err := CreateZipFile(tt.args.fp)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
 		if len(files) < 1 {
-			t.Error()
-		}
-		for _, f := range files {
-			t.Errorf("%d", f)
+			t.Errorf("no filesS")
 		}
 	}
 }

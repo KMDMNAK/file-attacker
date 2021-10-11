@@ -123,15 +123,15 @@ func TestLockOnFile(t *testing.T) {
 			name:    "(success) password erc8 no limit",
 		},
 		// TODO somehow failed
-		// {
-		// 	args:    args{"testdata/password-pwin1.zip", 5, LOWERALPHABETSANDNUMBERS},
-		// 	wantErr: false,
-		// 	want:    "pwin1",
-		// 	name:    "(success) password pwin1 no limit",
-		// },
+		{
+			args:    args{"testdata/password-pwin1.zip", 5, LOWERALPHABETSANDNUMBERS},
+			wantErr: false,
+			want:    "pwin1",
+			name:    "(success) password pwin1 no limit",
+		},
 	}
 	for _, tt := range tests {
-		pw, err := LockOnFile(tt.args.fp, uint16(tt.args.length), 3, tt.args.pwCharactors, "")
+		pw, err := LockOnFile(tt.args.fp, uint16(tt.args.length), 3, tt.args.pwCharactors, "", 0)
 		if err != nil {
 			if !tt.wantErr {
 				t.Errorf("name :%s\n%s", tt.name, err.Error())
