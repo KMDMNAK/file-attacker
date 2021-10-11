@@ -40,10 +40,10 @@ func CreateZipFile(fp string) (passwordValidator, error) {
 	if err != nil {
 		return nil, err
 	}
-	files := make([]*file, len(zr.File))
-	for i, f := range zr.File {
+	var files []*file
+	for _, f := range zr.File {
 		if !f.IsEncrypted() {
-			return nil, NoEncryptedErr
+			continue
 		}
 		offset, err := f.DataOffset()
 		if err != nil {
@@ -60,7 +60,7 @@ func CreateZipFile(fp string) (passwordValidator, error) {
 		if err != nil {
 			return nil, err
 		}
-		files[i] = &ff
+		files = append(files, &ff)
 	}
 	return passwordValidator(files), nil
 }
