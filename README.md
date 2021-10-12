@@ -1,5 +1,5 @@
 # file-attacker
-Brute force attack for local file
+Brute force attack for local zip file.
 
 
 ## ref
